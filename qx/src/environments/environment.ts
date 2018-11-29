@@ -5,7 +5,7 @@
 export const environment = {
   production: false,
   settings: {
-    host: 'chisel.cloudjiffy.net',
+    host: 'http://chisel.cloudjiffy.net',
     getPatientDetails: 'api/qx',
     getEdssAndSymptoms: 'api/qx/edssAndSymptoms',
     postPatientData: 'api/qx',

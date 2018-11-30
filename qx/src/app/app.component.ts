@@ -47,19 +47,20 @@ export class AppComponent implements OnInit, OnDestroy {
     qx_appt_date = moment(qx_appt_date, 'MM/DD/YYYY').format('MM/DD/YYYY');
     qx_appt_time || (qx_appt_time = `${moment().hours()}:${moment().seconds()}:${moment().milliseconds()}`);
     const appt_date = moment(`${qx_appt_date} ${qx_appt_time}`, 'MM/DD/YYYY HH:mm:ss');
-    if (moment().diff(appt_date) > 0) {
-      welcomePage = 'questionnaireclosed';
-    } else {
-      if (qx_completed_at) {
-        welcomePage = 'thankyou';
-      } else {
-        if (qx_type) {
-          status ? (welcomePage = 'welcomeb') : (welcomePage = 'welcomea');
-        } else {
-          welcomePage = 'welcomec';
-        }
-      }
-    }
+    // if (moment().diff(appt_date) > 0) {
+    //   welcomePage = 'questionnaireclosed';
+    // } else {
+    //   if (qx_completed_at) {
+    //     welcomePage = 'thankyou';
+    //   } else {
+    //     if (qx_type) {
+    //       status ? (welcomePage = 'welcomeb') : (welcomePage = 'welcomea');
+    //     } else {
+    //       welcomePage = 'welcomec';
+    //     }
+    //   }
+    // }
+    welcomePage = 'welcomea';
     return (welcomePage);
   }
 

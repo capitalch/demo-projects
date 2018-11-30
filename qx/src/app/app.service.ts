@@ -7,34 +7,41 @@ import * as moment from 'moment';
 import { navMap } from './app.config';
 import { environment } from '../environments/environment';
 import * as _ from 'lodash';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
 })
 
-// qx_code provides all information about a patient
 export class AppService {
   global: any = {};
   subject: Subject<any>;
-  constructor(private ibukiService: IbukiService, private httpClient: HttpClient) {
+  constructor(private ibukiService: IbukiService, private httpClient: HttpClient, private router: Router) {
     this.set('navMap', navMap);
   }
 
   initialize() {
     this.setUrlParams();
-    this.ibukiService.init(environment.settings); // set the settings in ibukiservice
-    this.ibukiService.httpGet('getPatientDetails', { qx_code: this.get('qx_code') }, true);
+    this.ibukiService.init(environment.settings);
+    if (this.get('isUnsubscribe')) {
+      this.router.navigate(['unsubscribe'], { queryParams: { qx_code: this.get('qx_code') } });
+    } else {
+      this.ibukiService.httpGet('getPatientDetails', { qx_code: this.get('qx_code') }, true);
+    }
   }
 
-  getPostData() {
-    const qx = this.get('qx');
+  getPostData(pageName) {
+    const qx = this.get('qx') || '';
+    const qx_code = this.get('qx_code') || '';
     const ret = {
       status: qx.status,
-      qx_code: qx.qx_code,
+      qx_code: qx.qx_code || qx_code,
       carry_bag: qx.carry_bag,
-      responses: qx.responses
+      responses: qx.responses,
+      last_updated_at: moment().format('YYYY-MM-DD kk:mm:ss'),
+      current_page_name: pageName
     };
-    return(ret);
+    return (ret);
   }
 
   getWelcomeData() {
@@ -43,7 +50,7 @@ export class AppService {
     qx && (
       data.firstName = qx.first_name || ''
       , data.lastName = qx.last_name || ''
-      , data.appDate = moment(qx.appointment_date).format('MMMM D, YYYY')
+      , data.appDate = moment(qx.qx_appt_date, 'MM/DD/YYYY').format('MMMM D, YYYY')
       , data.clinicianName = qx.clinician_name || ''
       , data.email = email
       , data.phone = phone
@@ -56,7 +63,7 @@ export class AppService {
     const qx = this.get('qx');
     const responses = qx && (qx.responses) && JSON.parse(qx.responses);
     const ansOption = responses && navMap.q29.options.map(item => {
-      return (item.checked) && (item.othertext ? item.text + ' ' + item.othertext : item.text);
+      return (item.checked) && (item.othertext ? item.text + ': ' + item.othertext : item.text);
     });
     return ansOption;
   }
@@ -75,7 +82,8 @@ export class AppService {
 
   setUrlParams() {
     let rawParams = top.location.search || top.location.hash;
-    rawParams.includes('unsubscribe') ? this.set('toNavigate', false) : this.set('toNavigate', true);
+    rawParams.includes('unsubscribe') || top.location.href.includes('unsubscribe')
+      ? this.set('isUnsubscribe', true) : this.set('isUnsubscribe', false);
     rawParams = decodeURIComponent(rawParams);
     const urlArray = rawParams.slice(rawParams.indexOf('?') + 1).split('&');
     const urlObject: any = urlArray.reduce((prevValue, x, i) => {
@@ -84,7 +92,7 @@ export class AppService {
       return (prevValue);
     }, {});
     Object.assign(this.global, urlObject);
-    this.get('qx_code') || this.set('qx_code', '1111'); // set default qx_code as 1111
+    this.get('qx_code') || this.set('qx_code', '1111');
   }
 
   populateNavMap() {
@@ -105,7 +113,7 @@ export class AppService {
             x.options = _.cloneDeep(toBeCloned);
           }
         });
-        switch (pageObj.type) {
+        switch (pageObj.type.toLowerCase()) {
           case 'radio':
           case 'scale':
             respFilter = responses.filter(x => x.qx_code === pageObj.name);
@@ -130,7 +138,7 @@ export class AppService {
               }
             });
             break;
-          case 'selectOptions':
+          case 'selectoptions':
             sub && sub.forEach(element => {
               respFilter = responses.filter(x => x.qx_code === element.name);
               element.value = (respFilter && respFilter.length > 0) ? respFilter[0].answer_text : '';
@@ -155,14 +163,14 @@ export class AppService {
             if (respFilter && respFilter.length > 0) {
               this.updateRadioQx(respFilter[0], pageObj);
             }
-            if (qx.gender && (qx.gender === 'male')) {
+            if (qx.gender && (qx.gender.toLowerCase() === 'male')) {
               pageObj && (pageObj.male) && (pageObj.male.sub) && pageObj.male.sub.forEach(element => {
                 respFilter = responses.filter(x => x.qx_code === element.name);
                 if (respFilter && respFilter.length > 0) {
                   this.updateTableQx(respFilter[0], element);
                 }
               });
-            } else if (qx.gender && (qx.gender === 'female')) {
+            } else if (qx.gender && (qx.gender.toLowerCase() === 'female')) {
               pageObj && (pageObj.female) && (pageObj.female.sub) && pageObj.female.sub.forEach(element => {
                 respFilter = responses.filter(x => x.qx_code === element.name);
                 if (respFilter && respFilter.length > 0) {
@@ -171,7 +179,7 @@ export class AppService {
               });
             }
             break;
-          case 'patientConcerns':
+          case 'patientconcerns':
             respFilter = responses.filter(x => x.qx_code === pageObj.name);
             let y = 0;
             if (respFilter && respFilter.length > 0) {
@@ -225,7 +233,7 @@ export class AppService {
       const length = pagesVisited && Array.isArray(pagesVisited) && pagesVisited.length;
       const pageName = length && pagesVisited[length - 1].pageName;
 
-      landingPage = pageName && this.getJumpTo(navMap[pageName]); // navMap[pageName].jumpTo;
+      landingPage = pageName && this.getJumpTo(navMap[pageName]);
       (landingPage === 'review') || (
         landingPage && (navMap[landingPage].jumpBack = pageName)
       );
@@ -283,7 +291,7 @@ export class AppService {
 
   checkPageEmptyOrNot = (page) => {
     let isAnswered: any = false;
-    switch (page.type) {
+    switch (page.type.toLowerCase()) {
       case 'table':
       case 'header':
         (page.sub) && page.sub.forEach(element => {
@@ -299,7 +307,7 @@ export class AppService {
           isAnswered = isAnswered || ((element.answer) ? true : false);
         });
         break;
-      case 'selectOptions':
+      case 'selectoptions':
         (page.sub) && page.sub.forEach(element => {
           isAnswered = isAnswered || ((element.value) ? true : false);
         });
@@ -319,7 +327,7 @@ export class AppService {
         })
         );
         break;
-      case 'patientConcerns':
+      case 'patientconcerns':
         isAnswered = (page.options.filter(item => item.checked).length > 0);
         break;
       case 'relapses':

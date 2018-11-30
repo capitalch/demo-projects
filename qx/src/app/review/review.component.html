@@ -8,26 +8,28 @@
   <div class="contents">
     <p><b>{{data.firstName}}, here is a summary of information based on your answers.</b></p>
     <ul>
-      <li class="revieContentPadding" *ngIf="edssAndSymptoms && edssAndSymptoms.symptoms">Current symptoms with status:
+      <li class="revieContentPadding" *ngIf="displaySection && edssAndSymptoms && edssAndSymptoms.symptoms">Current
+        symptoms with status:
         <ul>
-          <li *ngFor="let symptom of edssAndSymptoms.symptoms.split(',')">
+          <li *ngFor="let symptom of edssAndSymptoms.symptoms">
             {{symptom}}
           </li>
         </ul>
       </li>
-      <li class="revieContentPadding" *ngIf="displaySection && edssAndSymptoms.edss_score">
-        EDSS score: {{edssAndSymptoms.edss_score}}
-      </li>
       <li class="revieContentPadding" *ngIf="relapses">
         Relapses since your last visit: {{relapses}}
       </li>
-      <li class="revieContentPadding" *ngIf="presentResponses">
+      <li class="revieContentPadding" *ngIf="presentResponses && presentResponses.length>0">
         Topics you want to discuss with your doctor:
         <ul>
           <li *ngFor="let response of presentResponses">
             <label *ngIf='response'> {{response}} </label>
           </li>
         </ul>
+      </li>
+      <li class="revieContentPadding" *ngIf="!presentResponses || presentResponses.length==0">
+        Topics you want to discuss with your doctor:
+        <label>You did not list any topics to discuss at your upcoming visit</label>
       </li>
     </ul>
     <p>

@@ -1,14 +1,26 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { navMap, sutterHealthUrl } from '../app.config';
+import { navMap, sutterHealthUrl, allMessages } from '../app.config';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { AppService } from '../app.service';
-// import * as _ from 'lodash';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
 import { ModalPopupComponent } from '../modal-popup/modal-popup.component';
 import { IbukiService } from '../ibuki.service';
 import { filter } from 'rxjs/operators';
-// import { resource } from 'selenium-webdriver/http';
+
+const selectOptionsMapping = {
+  '0%': 0,
+  '10%': 1,
+  '20%': 2,
+  '30%': 3,
+  '40%': 4,
+  '50%': 5,
+  '60%': 6,
+  '70%': 7,
+  '80%': 8,
+  '90%': 9,
+  '100%': 10
+};
 
 @Component({
   selector: 'app-navigate',
@@ -28,8 +40,11 @@ export class NavigateComponent implements OnInit {
     private location: Location, public dialog: MatDialog, private ibukiService: IbukiService) { }
 
   ngOnInit() {
-    const qx = this.appService.get('qx');
-    this.responses = qx && JSON.parse(qx.responses);
+    let qx = this.appService.get('qx');
+    qx || (qx = {});
+    this.appService.set('qx', qx);
+    qx.responses || (qx.responses = '[]');
+    this.responses = JSON.parse(qx.responses);
     (this.responses) || (this.responses = []);
     this.pagesVisited = this.appService.get('pagesVisited');
     (this.pagesVisited) && (Array.isArray(this.pagesVisited)) || (this.pagesVisited = []);
@@ -54,15 +69,18 @@ export class NavigateComponent implements OnInit {
     (jumpTo === 'review')
       ? this.router.navigate(['review'], { queryParamsHandling: 'preserve' })
       : this.router.navigate(['generic1', jumpTo], { queryParamsHandling: 'preserve' });
+    this.ibukiService.behEmit(allMessages.pageRouting, null);
   }
-  getPagesVisited = (obj) => {
+  getPagesVisited = (obj: any, qx: any): string => {
+    let status = qx.status;
     this.pagesVisited = this.appService.get('pagesVisited');
     const pageObj: any = {};
     pageObj.pageName = this.pageName;
     pageObj.isAnswered = this.appService.checkPageEmptyOrNot(obj);
+    status || (pageObj.isAnswered && (status = 'started'));
     const element = this.pagesVisited.filter(item => item.pageName === this.pageName);
     ((element.length === 0) && this.pagesVisited.push(pageObj)) || (element[0].isAnswered = pageObj.isAnswered);
-    this.appService.set('pagesVisited', this.pagesVisited);
+    return status;
   }
   previous() {
     this.pageObject = navMap[this.pageName];
@@ -88,12 +106,6 @@ export class NavigateComponent implements OnInit {
     });
     this.pageObject = navMap[this.pageName];
     this.saveData(this.pageObject);
-    // const qx = this.appService.get('qx');
-    // const carryBag = JSON.stringify({
-    //   'pages_visited': this.pagesVisited
-    // });
-    // qx && (qx.carry_bag = carryBag);
-    // this.ibukiService.httpPost('postPatientData', this.appService.getPostData());
     dialogRef.afterClosed().subscribe(result => {
       if (result === '0') {
         window.location.href = sutterHealthUrl;
@@ -102,10 +114,10 @@ export class NavigateComponent implements OnInit {
   }
 
   saveData(obj) {
-    this.getPagesVisited(obj);
-    const sub = obj.sub;
     const qx = this.appService.get('qx');
-    switch (obj.type) {
+    const status = this.getPagesVisited(obj, qx);
+    const sub = obj.sub;
+    switch (obj.type.toLowerCase()) {
       case 'radio':
       case 'scale':
         this.prepareRadioQx(obj);
@@ -121,7 +133,7 @@ export class NavigateComponent implements OnInit {
           this.prepareRadioQx(element);
         });
         break;
-      case 'selectOptions':
+      case 'selectoptions':
         sub && sub.forEach(element => {
           this.prepareSelectOptionQx(element, obj.selectOptions);
         });
@@ -136,39 +148,45 @@ export class NavigateComponent implements OnInit {
         break;
       case 'gender':
         this.prepareRadioQx(obj);
-        if (qx.gender && (qx.gender === 'male')) {
+        if (qx.gender && (qx.gender.toLowerCase() === 'male')) {
           obj && (obj.male) && (obj.male.sub) && obj.male.sub.forEach(element => {
             this.prepareTableQx(element);
           });
-        } else if (qx.gender && (qx.gender === 'female')) {
+        } else if (qx.gender && (qx.gender.toLowerCase() === 'female')) {
           obj && (obj.female) && (obj.female.sub) && obj.female.sub.forEach(element => {
             this.prepareTableQx(element);
           });
         }
         break;
-      case 'patientConcerns':
+      case 'patientconcerns':
         this.preparePatientConcerns(obj);
         break;
       case 'relapses':
         (obj.sub3) && obj.sub3.forEach(element => {
           this.prepareRadioQx(element);
         });
-        (obj.sub2) && this.prepareRelapce1(obj.sub2);
-        (obj.sub2) && (obj.sub1) && this.prepareRelapce2(obj.sub1, obj.sub2.answer);
+        const iHadRelapses = obj.sub3[0].answer.score > 0;
+        (obj.sub2) && this.prepareRelapce1(obj.sub2, iHadRelapses);
+        (obj.sub2) && (obj.sub1) && this.prepareRelapce2(obj.sub1, obj.sub2.answer, iHadRelapses);
         break;
     }
-    qx.status = 'started';
-    qx.responses = JSON.stringify(this.responses);
-    const qxTemp = this.appService.get('qx');
-    // console.log(qxTemp);
-    this.ibukiService.httpPost('postPatientData', this.appService.getPostData());
+    this.appService.set('qx', {
+      ...qx,
+      responses: JSON.stringify(this.responses),
+      status: status,
+      pagesVisited: this.pagesVisited,
+      carry_bag: JSON.stringify({
+        'pages_visited': this.pagesVisited
+      })
+    });
+    this.ibukiService.httpPost('postPatientData', this.appService.getPostData(this.pageName));
   }
 
-  prepareRelapce1 = (qxObj) => {
+  prepareRelapce1 = (qxObj, iHadRelapses) => {
     const filter1: any = this.responses.filter(item => item.qx_code === qxObj.name);
     if (filter1.length === 1) {
       filter1[0].answer_text = qxObj.answer;
-    } else {
+    } else if (iHadRelapses) {
       const temp: any = {};
       temp.qx_code = qxObj.name;
       temp.qx_text = qxObj.text;
@@ -180,7 +198,7 @@ export class NavigateComponent implements OnInit {
     }
   }
 
-  prepareRelapce2 = (qxObj, value) => {
+  prepareRelapce2 = (qxObj, value, iHadRelapses) => {
     const answer_text = [];
     if (value) {
       for (let i = 0; i < value; i++) {
@@ -193,7 +211,7 @@ export class NavigateComponent implements OnInit {
     const filter1: any = this.responses.filter(item => item.qx_code === qxObj.name);
     if (filter1.length === 1) {
       filter1[0].answer_text = answer_text;
-    } else {
+    } else if (iHadRelapses) {
       const temp: any = {};
       temp.qx_code = qxObj.name;
       temp.qx_text = qxObj.text;
@@ -226,10 +244,21 @@ export class NavigateComponent implements OnInit {
   }
 
   prepareRadioQx = (qxObj) => {
-    const filter1: any = (this.responses) && this.responses.filter(item => item.qx_code === qxObj.name);
-    if (filter1 && (filter1.length === 1)) {
-      filter1[0].answer_text = (qxObj.answer) && (qxObj.answer.text) && qxObj.answer.text;
-      filter1[0].answer_text_score = ((qxObj.answer) && (qxObj.answer.score) && qxObj.answer.score) || '';
+    qxObj.answer || (qxObj.answer = { text: '', score: 0 });
+    const elementInResponses = this.responses.find(x => x.qx_code === qxObj.name);
+    if (elementInResponses) {
+      if (elementInResponses.answer_text_score !== qxObj.answer.score) { // score changed
+        if (qxObj.deleteItems) {
+          this.responses = this.responses.filter(x => {
+            const z = qxObj.deleteItems.find(y => x.qx_code === y);
+            return (z === undefined);
+          });
+        }
+        // elementInResponses.answer_text = (qxObj.answer) && (qxObj.answer.text) && qxObj.answer.text;
+        // elementInResponses.answer_text_score = ((qxObj.answer) && (qxObj.answer.score) && qxObj.answer.score) || 0;
+      }
+      elementInResponses.answer_text = (qxObj.answer) && (qxObj.answer.text) && qxObj.answer.text;
+      elementInResponses.answer_text_score = ((qxObj.answer) && (qxObj.answer.score) && qxObj.answer.score) || 0;
     } else {
       const temp: any = {};
       temp.qx_code = qxObj.name;
@@ -277,13 +306,15 @@ export class NavigateComponent implements OnInit {
     const filter1: any = (this.responses) && this.responses.filter(item => item.qx_code === qxObj.name);
     if (filter1 && (filter1.length === 1)) {
       filter1[0].answer_text = qxObj.value;
+      filter1[0].answer_text_score = selectOptionsMapping[qxObj.value];
     } else {
       const temp: any = {};
       temp.qx_code = qxObj.name;
       temp.qx_text = qxObj.text;
       temp.answer_options = selectOptions;
-      temp.answer_options_score = [];
+      temp.answer_options_score = selectOptions.map((item) => selectOptionsMapping[item]);
       temp.answer_text = qxObj.value;
+      temp.answer_text_score = selectOptionsMapping[qxObj.value];
       temp.qx_global_text = '';
       temp.edss = qxObj.edss || 'no';
       this.responses.push(temp);

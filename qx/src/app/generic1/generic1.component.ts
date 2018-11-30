@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { navMap } from '../app.config';
 import * as _ from 'lodash';
@@ -12,7 +12,7 @@ import { DomSanitizer, SafeResourceUrl, SafeUrl } from '@angular/platform-browse
   styleUrls: ['./generic1.component.scss']
 })
 
-export class Generic1Component implements OnInit {
+export class Generic1Component implements OnInit, OnDestroy {
   pageName: string;
   pageObject: any;
   selectedOption: any;
@@ -28,6 +28,7 @@ export class Generic1Component implements OnInit {
   progress: any;
   private _tickInterval = 1;
   pagesVisited: any;
+  private routeSubscription: any;
   constructor(private router: Router,
     private activatedRoute: ActivatedRoute,
     private appService: AppService, private _sanitizer: DomSanitizer, private ibukiService: IbukiService) {
@@ -40,7 +41,7 @@ export class Generic1Component implements OnInit {
     this.pagesVisited = (this.pagesVisited) || (carryBag && carryBag.pages_visited);
     (this.pagesVisited) && (Array.isArray(this.pagesVisited)) || (this.pagesVisited = []);
     this.appService.set('pagesVisited', this.pagesVisited);
-    this.activatedRoute
+    this.routeSubscription = this.activatedRoute
       .params
       .subscribe(param => {
         if (param.pageName) {
@@ -58,8 +59,18 @@ export class Generic1Component implements OnInit {
           'pages_visited': this.pagesVisited
         });
         qx && (qx.carry_bag = carryBag);
-        // this.ibukiService.httpPost('postPatientData', this.appService.get('qx'));
+        this.initQxStatus();
       });
+  }
+  initQxStatus() {
+    const qx = this.appService.get('qx');
+    this.appService.set('qx', {
+      ...qx,
+      status: 'started',
+    });
+  }
+  ngOnDestroy() {
+    this.routeSubscription.unsubscribe();
   }
 
   getPagesVisited = (obj) => {
@@ -78,7 +89,7 @@ export class Generic1Component implements OnInit {
     const relapses = this.pageObject.relapses;
     const commonOptions = this.pageObject.commonOptions;
     const qx = this.appService.get('qx');
-    const gender = qx && qx.gender;
+    const gender = qx && qx.gender.toLowerCase();
     this.pageObject.gender = gender || 'male';
     if (sub && commonOptions) {
       sub.forEach(x => {
@@ -92,7 +103,8 @@ export class Generic1Component implements OnInit {
     const d = new Date();
     let year = d.getFullYear();
     year = year + 1;
-    this.ddlYearsOption = _.range(2012, year, 1);
+    const yrange = _.range(2012, year, 1);
+    this.ddlYearsOption = yrange.sort((prev, next) => next - prev);
     this.ddlMonthOption = relapses && (this.pageObject.sub1.monthOptions);
   }
 
@@ -102,7 +114,7 @@ export class Generic1Component implements OnInit {
       const index = +event.source.name;
       sub[index]
         .options
-        .forEach(x => x.checked = false); // to reset the already checked radio button
+        .forEach(x => x.checked = false);
     }
     const relapses = this.pageObject.relapses;
     const selectOptions = this.pageObject.selectOptions;

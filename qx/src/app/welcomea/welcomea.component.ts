@@ -14,7 +14,7 @@ export class WelcomeaComponent implements OnInit {
 
   ngOnInit() {
     const x = this.appService.get('qx') || this.ibukiService.behFilterOn('getPatientDetails').subscribe(d => {
-      this.appService.set('qx', d.data); // All data against qx_code is saved in global variable property 'qx'
+      this.appService.set('qx', d.data);
       this.data = this.appService.getWelcomeData();
       x && x.unsubscribe();
     });

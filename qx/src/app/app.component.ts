@@ -10,19 +10,18 @@ import { IbukiService } from './ibuki.service';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, OnDestroy {
-  title = 'questionnaire';
+  title = 'neuroshare-questionnaire';
   sub: any = {};
   constructor(private appService: AppService, private ibukiService: IbukiService, private router: Router) {
   }
 
   ngOnInit() {
     this.sub = this.ibukiService.behFilterOn('getPatientDetails').subscribe(d => {
-      this.appService.set('qx', d.data); // All data is saved in global variable property 'qx'
+      this.appService.set('qx', d.data);
       const welcomePage = this.getWelcomePage();
       this.appService.set('welcomePage', welcomePage);
       if (welcomePage === 'welcomeb') { this.appService.populateNavMap(); }
-      this.appService.get('toNavigate') &&
-        this.router.navigate([welcomePage], { queryParams: { qx_code: this.appService.get('qx_code') } });
+      this.router.navigate([welcomePage], { queryParams: { qx_code: this.appService.get('qx_code') } });
     });
     this.appService.initialize();
   }
@@ -40,17 +39,25 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getWelcomePage() {
     const qx = this.appService.get('qx');
-    const completedDate = qx && qx.qx_completed_at;
-    const isCompletedWithin90Days = this.isWithin90Days(completedDate);
-    const status = (qx && qx.status); // || 'none';
     let welcomePage = '';
-    if (isCompletedWithin90Days) {
-      welcomePage = 'welcomec';
+    const qx_completed_at = qx.qx_completed_at;
+    const qx_type = (qx.qx_type.toLowerCase() === 'full');
+    const status = (qx.status === 'started');
+    let { qx_appt_date, qx_appt_time } = qx;
+    qx_appt_date = moment(qx_appt_date, 'MM/DD/YYYY').format('MM/DD/YYYY');
+    qx_appt_time || (qx_appt_time = `${moment().hours()}:${moment().seconds()}:${moment().milliseconds()}`);
+    const appt_date = moment(`${qx_appt_date} ${qx_appt_time}`, 'MM/DD/YYYY HH:mm:ss');
+    if (moment().diff(appt_date) > 0) {
+      welcomePage = 'questionnaireclosed';
     } else {
-      if (status === 'started') {
-        welcomePage = 'welcomeb';
+      if (qx_completed_at) {
+        welcomePage = 'thankyou';
       } else {
-        welcomePage = 'welcomea';
+        if (qx_type) {
+          status ? (welcomePage = 'welcomeb') : (welcomePage = 'welcomea');
+        } else {
+          welcomePage = 'welcomec';
+        }
       }
     }
     return (welcomePage);

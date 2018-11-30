@@ -1,10 +1,10 @@
+
 export const environment = {
-    production: false,
-    settings: {
-      host: 'http://node8066-env-3391555.cloudjiffy.net',
-      getPatientDetails: 'api/qx',
-      postPatientData: 'api/qx',
-      getEdssAndSymptoms: 'api/qx/edssAndSymptoms',
-      postCompletedAndSubmit: 'api/qx/complete'
-    }
-  };
+  production: false,
+  settings: {
+    // host: 'http://dcplrdd101:8989',
+    getPatientDetails: 'http://dcplrdd101:8989/neuroshare/api/external/ms/questionnaire-responses',
+    postPatientData: 'http://dcplrdd101:8989/neuroshare/api/external/ms/questionnaire-responses',
+    unsubscribe: 'http://dcplrdd101:8989/neuroshare/api/external/opt-out'
+  }
+};

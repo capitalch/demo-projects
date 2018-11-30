@@ -6,14 +6,14 @@ import {
 } from '@angular/material';
 @NgModule({
   imports: [
-    MatSliderModule,MatCardModule, MatSelectModule,
+    MatSliderModule, MatCardModule, MatSelectModule,
     CommonModule, MatRadioModule, MatButtonModule,
     MatDialogModule, MatGridListModule, MatCheckboxModule, MatListModule
   ],
   exports: [
     MatSliderModule,
     MatCardModule, MatSelectModule,
-    MatRadioModule, MatButtonModule, 
+    MatRadioModule, MatButtonModule,
     MatDialogModule, MatGridListModule, MatCheckboxModule, MatListModule
   ],
   declarations: []

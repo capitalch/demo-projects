@@ -8,18 +8,9 @@ import { UnsubscribeComponent } from './unsubscribe/unsubscribe.component';
 import { ThankYouComponent } from './thankyou/thankyou.component';
 import { UnsubscribeConfirmComponent } from './unsubscribe-confirm/unsubscribe-confirm.component';
 import { UnsubscribeDenyComponent } from './unsubscribe-deny/unsubscribe-deny.component';
-// import { BlankComponent } from './blank/blank.component';
+import { QuestionnaireClosedComponent } from './questionnaire-closed/questionnaire-closed.component';
 
 export const ROUTES: Routes = [
-  // {
-  //   path: '',
-  //   redirectTo: 'welcomea',
-  //   pathMatch: 'full'
-  // },
-  // {
-  //   path: 'blank',
-  //   component: BlankComponent
-  // },
   {
     path: 'welcomea',
     component: WelcomeaComponent
@@ -60,5 +51,9 @@ export const ROUTES: Routes = [
     path: 'generic1/',
     component: Generic1Component,
     pathMatch: 'full'
+  },
+  {
+    path: 'questionnaireclosed', pathMatch: 'full',
+    component: QuestionnaireClosedComponent
   }
 ];

@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { IbukiService } from '../ibuki.service';
+import { AppService } from '../app.service';
 
 @Component({
   selector: 'app-unsubscribe',
@@ -8,23 +10,16 @@ import { Router } from '@angular/router';
 })
 export class UnsubscribeComponent implements OnInit {
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private ibukiService: IbukiService, private appService: AppService) { }
   ngOnInit() {
   }
   deny() {
-    // this
-    //   .router
-    //   .navigate(['deny'], { queryParamsHandling: 'preserve' });
-
     this
       .router
       .navigate(['deny']);
   }
   unsubscribe() {
-    // this
-    //   .router
-    //   .navigate(['confirm'], { queryParamsHandling: 'preserve' });
-
+    this.ibukiService.httpGet('unsubscribe', null, false, { qx_code: this.appService.get('qx_code') });
     this
       .router
       .navigate(['confirm']);

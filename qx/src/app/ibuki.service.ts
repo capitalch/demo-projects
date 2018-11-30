@@ -53,8 +53,6 @@ export class IbukiService {
     if (!body) {
       return;
     }
-    // body = body || {};
-    // const a = body.id || (body.id = id);
     if (queryParams) {
       let httpParams = new HttpParams();
       httpParams = Object
@@ -80,18 +78,21 @@ export class IbukiService {
   }
 
   getHttpUrl = (id) => {
-    const host = this.settings.host.replace(/\/$/, '');
+    // const host = this.settings.host.replace(/\/$/, '');
     let url = this.settings[id];
-    const a = url || (url = this.settings['defaultEndPoint']);
-    const b = url && (url = url.replace(/^,/, ''));
-    url = host.concat('/', url);
+    url || (url = this.settings['defaultEndPoint']);
+    url && (url = url.replace(/^,/, ''));
+    // url = host.concat('/', url);
     return (url);
   }
 
-  httpGet(id: string, queryParams?: {}, isBehavior?: boolean) {
+  httpGet(id: string, queryParams?: {}, isBehavior?: boolean, urlParams?: {}) {
     const subj = isBehavior ? this.behSubject : this.subject;
     try {
-      const url = this.getHttpUrl(id);
+      let url = this.getHttpUrl(id);
+      urlParams && Object.keys(urlParams).forEach((key) => {
+        url = url.concat('/', urlParams[key]);
+      });
       let httpParams = new HttpParams();
       httpParams = queryParams && (Object.keys(queryParams).reduce((prevValue, x, i) => {
         httpParams = httpParams.append(x, queryParams[x]);

@@ -14,7 +14,7 @@ export class WelcomecComponent implements OnInit {
 
   ngOnInit() {
     const x = this.appService.get('qx') || this.ibukiService.behFilterOn('getPatientDetails').subscribe(d => {
-      this.appService.set('qx', d.data); // All data against qx_code
+      this.appService.set('qx', d.data);
       const y = x && x.unsubscribe();
     });
     this.data = this.appService.getWelcomeData();
@@ -22,6 +22,5 @@ export class WelcomecComponent implements OnInit {
   next() {
     navMap['q27'].jumpBack = 'start';
     this.router.navigate(['generic1', 'q27'], { queryParamsHandling: 'preserve' });
-    // this.router.navigate(['generic1', 'q1a']);
   }
 }

@@ -1,10 +1,9 @@
+
 export const environment = {
-  production: true,
+  production: false,
   settings: {
-    host: 'http://chisel.cloudjiffy.net',
-    getPatientDetails: 'api/qx',
-    postPatientData: 'api/qx',
-    getEdssAndSymptoms: 'api/qx/edssAndSymptoms',
-    postCompletedAndSubmit: 'api/qx/complete'
+    getPatientDetails: 'http://chisel.cloudjiffy.net/api/qx',
+    postPatientData: 'http://chisel.cloudjiffy.net/api/qx',
+    unsubscribe: 'http://chisel.cloudjiffy.net/opt-out'
   }
 };

@@ -20,7 +20,7 @@ import { ThankYouComponent } from './thankyou/thankyou.component';
 import { HttpClientModule } from '../../node_modules/@angular/common/http';
 import { UnsubscribeConfirmComponent } from './unsubscribe-confirm/unsubscribe-confirm.component';
 import { UnsubscribeDenyComponent } from './unsubscribe-deny/unsubscribe-deny.component';
-import { BlankComponent } from './blank/blank.component';
+import { QuestionnaireClosedComponent } from './questionnaire-closed/questionnaire-closed.component';
 
 @NgModule({
   declarations: [
@@ -36,7 +36,7 @@ import { BlankComponent } from './blank/blank.component';
     ThankYouComponent,
     UnsubscribeConfirmComponent,
     UnsubscribeDenyComponent,
-    BlankComponent
+    QuestionnaireClosedComponent
   ],
   imports: [
     BrowserModule
